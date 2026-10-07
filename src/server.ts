@@ -1,26 +1,40 @@
-import app from './app';
+import { createApp } from './app';
 import { config } from './config/env';
 import { getDatabase, runMigrations } from './db/database';
+import { logger } from './utils/logger';
 
 const PORT = config.port;
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+export async function createServer(configOverride: Partial<typeof config> = {}) {
+    const databaseConfig = {
+        ...config,
+        ...configOverride,
+    };
 
-async function startServer() {
+    const db = await getDatabase(databaseConfig.databasePath);
+    await runMigrations(db, databaseConfig.migrationsPath);
+    const app = await createApp(db, databaseConfig);
+    const port = databaseConfig.port;
+    return { app, db, port };
+}
+
+export async function startServer(configOverride: Partial<typeof config> = {}) {
     try {
-        const db = getDatabase(process.env.DATABASE_PATH ?? 'data/crypto.db');
-        await runMigrations(await db, config.migrationsPath);
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+        const { app, db, port } = await createServer(configOverride);
+        const server = app.listen(port, () => {
+            logger.info(`Server is running on port ${PORT}`);
         });
+        return {
+            app,
+            server,
+            db,
+        };
     } catch (error) {
         console.error('Error starting the server:', error);
         process.exit(1);
     }
 }
 
-void startServer();
-
-export default app;
+if (require.main === module) {
+    startServer();
+}

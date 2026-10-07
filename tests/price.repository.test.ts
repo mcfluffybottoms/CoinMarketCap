@@ -18,7 +18,7 @@ describe('PriceRepository', () => {
     });
 
     beforeEach(async () => {
-        ClearDatabase(testDb);
+        await ClearDatabase(testDb);
     });
 
     afterAll(async () => {
@@ -45,6 +45,14 @@ describe('PriceRepository', () => {
                 ...input,
             });
         });
+        test('should throw when trying to create with non-existing coin', async () => {
+            const input = {
+                cryptocurrencyId: 9999999,
+                price: 50000,
+                fetched_at: new Date().toISOString(),
+            };
+            await expect(testPriceRepository.create(input)).rejects.toThrow();
+        });
     });
 
     describe('findLatestByCryptoId', () => {
@@ -67,9 +75,6 @@ describe('PriceRepository', () => {
                 ...input,
             });
         });
-    });
-
-    describe('findLatestCryptoIdIsActuallyLatest', () => {
         test('should get an actually latest price', async () => {
             const coinInput = {
                 symbol: 'BTC',
@@ -114,6 +119,10 @@ describe('PriceRepository', () => {
                 ...actualLatestPrice,
             });
         });
+        test('Should return null for non-existing crypto id', async () => {
+            const result = await testPriceRepository.findLatestByCryptoId(9999999);
+            expect(result).toBeNull();
+        });
     });
 
     describe('findHistoryByCryptoId', () => {
@@ -138,30 +147,9 @@ describe('PriceRepository', () => {
                 },
             ]);
         });
-    });
-
-    describe('findLatestByNonExistingCryptoId', () => {
-        test('Should return null for non-existing crypto id', async () => {
-            const result = await testPriceRepository.findLatestByCryptoId(9999999);
-            expect(result).toBeNull();
-        });
-    });
-
-    describe('findHistoryByNonExistingCryptoId', () => {
         test('should get an empty array for non-existing crypto id', async () => {
             const result = await testPriceRepository.findHistoryByCryptoId(9999999);
             expect(result).toEqual([]);
-        });
-    });
-
-    describe('createPriceNonExistingCoinFails', () => {
-        test('should throw when trying to create with non-existing coin', async () => {
-            const input = {
-                cryptocurrencyId: 9999999,
-                price: 50000,
-                fetched_at: new Date().toISOString(),
-            };
-            await expect(testPriceRepository.create(input)).rejects.toThrow();
         });
     });
 });

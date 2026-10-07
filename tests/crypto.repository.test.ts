@@ -11,11 +11,11 @@ describe('CryptoRepository', () => {
     beforeAll(async () => {
         testDb = await getDatabase(testConfig.databasePath);
         testCryptoRepository = new CryptoRepositoryImpl(testDb);
-        runMigrations(testDb, testConfig.migrationsPath);
+        await runMigrations(testDb, testConfig.migrationsPath);
     });
 
     beforeEach(async () => {
-        ClearDatabase(testDb);
+        await ClearDatabase(testDb);
     });
 
     afterAll(async () => {
@@ -71,6 +71,10 @@ describe('CryptoRepository', () => {
             expect(lastUpdatedAt.getTime()).toBeGreaterThanOrEqual(start);
             expect(lastUpdatedAt.getTime()).toBeLessThanOrEqual(finish);
         });
+        test('should return null when cryptocurrency does not exist', async () => {
+            const result = await testCryptoRepository.findById(999999);
+            expect(result).toBeNull();
+        });
     });
 
     describe('deleteCryptocurrency', () => {
@@ -84,9 +88,14 @@ describe('CryptoRepository', () => {
             const found = await testCryptoRepository.findById(added.id);
             expect(found).not.toBeNull();
 
-            await testCryptoRepository.delete(added.id);
+            const isDeleted = await testCryptoRepository.delete(added.id);
             const deleted = await testCryptoRepository.findById(added.id);
             expect(deleted).toBeNull();
+            expect(isDeleted).toBe(true);
+        });
+        test('delete a non existing coin returns null', async () => {
+            const result = await testCryptoRepository.delete(999999);
+            expect(result).toBe(false);
         });
     });
 
@@ -140,6 +149,10 @@ describe('CryptoRepository', () => {
                 }
             }
         });
+        test('should return empty when cryptocurrency does not exist', async () => {
+            const result = await testCryptoRepository.findBySymbol('?');
+            expect(result).toHaveLength(0);
+        });
     });
 
     describe('updateCrypto', () => {
@@ -171,40 +184,6 @@ describe('CryptoRepository', () => {
             expect(lastUpdatedAt.getTime()).toBeGreaterThanOrEqual(updateStart);
             expect(lastUpdatedAt.getTime()).toBeLessThanOrEqual(updateFinish);
         });
-    });
-
-    // describe('create an existing coin throws error', () => {
-    //     test('should update a cryptocurrency', async () => {
-    //         const input = {
-    //             symbol: 'BTC',
-    //             name: 'Bitcoin',
-    //         };
-
-    //         const start = Date.now();
-    //         const result = await testCryptoRepository.create(input);
-    //         const finish = Date.now();
-
-    //         expect(result).toEqual({
-    //             id: expect.any(Number),
-    //             ...input,
-    //             last_updated_at: expect.any(String),
-    //         });
-
-    //         const lastUpdatedAt = new Date(result.last_updated_at);
-    //         expect(lastUpdatedAt).not.toBe('Invalid Date');
-    //         expect(lastUpdatedAt.getTime()).toBeGreaterThanOrEqual(start);
-    //         expect(lastUpdatedAt.getTime()).toBeLessThanOrEqual(finish);
-    //     });
-    // });
-
-    describe('deleteNonExisting', () => {
-        test('delete a non existing coin returns null', async () => {
-            const result = await testCryptoRepository.delete(999999);
-            expect(result).toBe(false);
-        });
-    });
-
-    describe('updateNonExisting', () => {
         test('update a non existing cryptocurrency returns null', async () => {
             const result = await testCryptoRepository.update(999999, {
                 symbol: 'ETH',
