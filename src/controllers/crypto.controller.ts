@@ -1,12 +1,12 @@
 import { ValidationError } from '../errors/errors';
 import { CryptoService } from '../services/crypto.service';
 import {
-    CreateCryptocurrencyInput,
+    CreateCryptocurrencyRequest,
     Cryptocurrency,
     UpdateCryptocurrencyInput,
 } from '../types/crypto';
 import {
-    validateCreateCryptocurrencyInput,
+    validateCreateCryptocurrencyRequest,
     validateId,
     validateUpdateCryptocurrencyInput,
 } from '../validators/crypto.validator';
@@ -20,11 +20,11 @@ export class CryptoController {
     constructor(private readonly service: CryptoService) {}
 
     create = async (
-        req: Request<CreateCryptocurrencyInput>,
-        res: Response<Cryptocurrency | ErrorResponse>,
+        req: Request<CreateCryptocurrencyRequest>,
+        res: Response<Cryptocurrency[] | ErrorResponse>,
     ): Promise<void> => {
         try {
-            validateCreateCryptocurrencyInput(req.body);
+            validateCreateCryptocurrencyRequest(req.body);
             const coin = await this.service.create(req.body);
             res.status(201).json(coin);
         } catch (error) {
@@ -41,23 +41,62 @@ export class CryptoController {
         res.status(200).json(coins);
     };
 
-    findById = async (
-        req: Request<{ id: string }>,
-        res: Response<Cryptocurrency | ErrorResponse>,
+    find = async (
+        req: Request<{}, Cryptocurrency[] | ErrorResponse, {}, { id?: string; symbol?: string }>,
+        res: Response<Cryptocurrency[] | ErrorResponse>,
     ): Promise<void> => {
         try {
-            const id = validateId(req.params.id);
-            const coin = await this.service.findById(id);
-            if (!coin) {
-                res.status(404).json({ error: 'Cryptocurrency not found' });
+            const { id, symbol } = req.query;
+            if (id !== undefined) {
+                const coinId = validateId(id);
+                const coin = await this.service.findById(coinId);
+
+                if (!coin) {
+                    res.status(404).json({ error: 'Cryptocurrency not found' });
+                    return;
+                }
+
+                if (symbol !== undefined && coin.symbol != symbol) {
+                    res.status(400).json({
+                        error: 'Cryptocurrency contains a conflict between exclusive peers [id, symbol]',
+                    });
+                    return;
+                }
+
+                res.status(200).json([coin]);
                 return;
             }
-            res.status(200).json(coin);
+
+            if (symbol !== undefined) {
+                const normalizedSymbol = symbol.trim().toUpperCase();
+
+                if (!normalizedSymbol) {
+                    res.status(400).json({ error: 'Symbol is required' });
+                    return;
+                }
+
+                const coins = await this.service.findBySymbol(normalizedSymbol);
+
+                if (coins.length === 0) {
+                    res.status(404).json({
+                        error: 'Cryptocurrency symbol not found',
+                    });
+                    return;
+                }
+
+                res.status(200).json(coins);
+                return;
+            }
+
+            res.status(400).json({
+                error: 'Either id or symbol is required',
+            });
         } catch (error) {
             if (error instanceof ValidationError) {
                 res.status(400).json({ error: error.message });
                 return;
             }
+
             throw error;
         }
     };

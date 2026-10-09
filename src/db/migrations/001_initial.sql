@@ -14,3 +14,9 @@ CREATE TABLE IF NOT EXISTS price_history (
         REFERENCES cryptocurrencies(id)
         ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS mapping_table (
+    crypto_id INTEGER PRIMARY KEY COLLATE NOCASE,
+    cmc_id INTEGER NOT NULL UNIQUE,
+    cached_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

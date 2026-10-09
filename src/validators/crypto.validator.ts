@@ -1,17 +1,17 @@
-import { CreateCryptocurrencyInput, UpdateCryptocurrencyInput } from '../types/crypto';
+import { CreateCryptocurrencyRequest, UpdateCryptocurrencyInput } from '../types/crypto';
 import { ValidationError } from '../errors/errors';
 
-export function validateCreateCryptocurrencyInput(input: unknown): CreateCryptocurrencyInput {
+export function validateCreateCryptocurrencyRequest(input: unknown): CreateCryptocurrencyRequest {
     if (!input || typeof input !== 'object') {
         throw new ValidationError('Invalid input: Input must be an object.');
     }
 
-    const { symbol, name } = input as CreateCryptocurrencyInput;
+    const { symbol, name } = input as CreateCryptocurrencyRequest;
 
     if (!symbol || typeof symbol !== 'string') {
         throw new ValidationError('Invalid input: Symbol is required and must be a string.');
     }
-    if (!name || typeof name !== 'string') {
+    if (name != undefined && (typeof name !== 'string' || name.length == 0)) {
         throw new ValidationError('Invalid input: Name is required and must be a string.');
     }
 
@@ -28,7 +28,7 @@ export function validateUpdateCryptocurrencyInput(input: unknown): UpdateCryptoc
     if (!symbol || typeof symbol !== 'string') {
         throw new ValidationError('Invalid input: Symbol is required and must be a string.');
     }
-    if (!name || typeof name !== 'string') {
+    if (name != undefined && typeof name !== 'string') {
         throw new ValidationError('Invalid input: Name is required and must be a string.');
     }
 

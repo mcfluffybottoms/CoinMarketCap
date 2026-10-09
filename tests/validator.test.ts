@@ -1,41 +1,41 @@
 import {
-    validateCreateCryptocurrencyInput,
     validateUpdateCryptocurrencyInput,
     validateId,
+    validateCreateCryptocurrencyRequest,
 } from '../src/validators/crypto.validator';
 import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 import { ValidationError } from '../src/errors/errors';
 
-describe('validateCreateCryptocurrencyInput', () => {
+describe('validateCreateCryptocurrencyRequest', () => {
     test('should return valid input', () => {
         const input = {
             symbol: 'BTC',
             name: 'Bitcoin',
         };
 
-        const result = validateCreateCryptocurrencyInput(input);
+        const result = validateCreateCryptocurrencyRequest(input);
 
         expect(result).toEqual(input);
     });
 
     test('should throw ValidationError when input is null', () => {
-        expect(() => validateCreateCryptocurrencyInput(null)).toThrow(ValidationError);
-        expect(() => validateCreateCryptocurrencyInput(null)).toThrow(
+        expect(() => validateCreateCryptocurrencyRequest(null)).toThrow(ValidationError);
+        expect(() => validateCreateCryptocurrencyRequest(null)).toThrow(
             'Invalid input: Input must be an object.',
         );
     });
 
     test('should throw ValidationError when input is not an object', () => {
-        expect(() => validateCreateCryptocurrencyInput('BTC')).toThrow(ValidationError);
-        expect(() => validateCreateCryptocurrencyInput('BTC')).toThrow(
+        expect(() => validateCreateCryptocurrencyRequest('BTC')).toThrow(ValidationError);
+        expect(() => validateCreateCryptocurrencyRequest('BTC')).toThrow(
             'Invalid input: Input must be an object.',
         );
     });
 
     test('should throw ValidationError when symbol is missing', () => {
         expect(() =>
-            validateCreateCryptocurrencyInput({
+            validateCreateCryptocurrencyRequest({
                 name: 'Bitcoin',
             }),
         ).toThrow('Invalid input: Symbol is required and must be a string.');
@@ -43,24 +43,24 @@ describe('validateCreateCryptocurrencyInput', () => {
 
     test('should throw ValidationError when symbol is not a string', () => {
         expect(() =>
-            validateCreateCryptocurrencyInput({
+            validateCreateCryptocurrencyRequest({
                 symbol: 123,
                 name: 'Bitcoin',
             }),
         ).toThrow(ValidationError);
     });
 
-    test('should throw ValidationError when name is missing', () => {
-        expect(() =>
-            validateCreateCryptocurrencyInput({
-                symbol: 'BTC',
-            }),
-        ).toThrow('Invalid input: Name is required and must be a string.');
+    test('should not throw ValidationError when name is missing', () => {
+        const input = {
+            symbol: 'ETH',
+        };
+        const result = validateUpdateCryptocurrencyInput(input);
+        expect(result).toEqual(input);
     });
 
     test('should throw ValidationError when name is not a string', () => {
         expect(() =>
-            validateCreateCryptocurrencyInput({
+            validateCreateCryptocurrencyRequest({
                 symbol: 'BTC',
                 name: 123,
             }),
@@ -69,7 +69,7 @@ describe('validateCreateCryptocurrencyInput', () => {
 
     test('should reject empty symbol', () => {
         expect(() =>
-            validateCreateCryptocurrencyInput({
+            validateCreateCryptocurrencyRequest({
                 symbol: '',
                 name: 'Bitcoin',
             }),
@@ -78,7 +78,7 @@ describe('validateCreateCryptocurrencyInput', () => {
 
     test('should reject empty name', () => {
         expect(() =>
-            validateCreateCryptocurrencyInput({
+            validateCreateCryptocurrencyRequest({
                 symbol: 'BTC',
                 name: '',
             }),
@@ -123,12 +123,12 @@ describe('validateUpdateCryptocurrencyInput', () => {
         ).toThrow(ValidationError);
     });
 
-    test('should throw ValidationError when name is missing', () => {
-        expect(() =>
-            validateUpdateCryptocurrencyInput({
-                symbol: 'ETH',
-            }),
-        ).toThrow('Invalid input: Name is required and must be a string.');
+    test('should not throw ValidationError when name is missing', () => {
+        const input = {
+            symbol: 'ETH',
+        };
+        const result = validateUpdateCryptocurrencyInput(input);
+        expect(result).toEqual(input);
     });
 
     test('should throw ValidationError when name is not a string', () => {

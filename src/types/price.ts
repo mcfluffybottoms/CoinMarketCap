@@ -8,5 +8,5 @@ export type PriceHistory = {
 export type CreatePriceHistoryInput = {
     cryptocurrencyId: number;
     price: number;
-    fetched_at?: string;
+    fetched_at: string;
 };

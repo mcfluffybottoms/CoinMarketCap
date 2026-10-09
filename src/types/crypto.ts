@@ -5,7 +5,12 @@ export type Cryptocurrency = {
     last_updated_at: string;
 };
 
-export type CreateCryptocurrencyInput = {
+export type CreateCryptocurrencyRequest = {
+    symbol: string;
+    name: string | undefined;
+};
+
+export type CreateCryptocurrencyRecord = {
     symbol: string;
     name: string;
 };

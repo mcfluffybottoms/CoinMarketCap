@@ -59,21 +59,20 @@ export function closeDatabase(database: Database): Promise<void> {
     });
 }
 
-export async function ClearDatabase(db: Database) {
-    await new Promise<void>((resolve, reject) => {
-        db.exec('DELETE FROM cryptocurrencies;', (err) => {
-            if (err) {
-                reject(err);
-            } else {
+export async function ClearDatabase(db: Database): Promise<void> {
+    const exec = (sql: string): Promise<void> =>
+        new Promise((resolve, reject) => {
+            db.exec(sql, (err) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+
                 resolve();
-            }
+            });
         });
-        db.exec('DELETE FROM price_history;', (err) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
-    });
+
+    await exec('DELETE FROM price_history;');
+    await exec('DELETE FROM mapping_table;');
+    await exec('DELETE FROM cryptocurrencies;');
 }

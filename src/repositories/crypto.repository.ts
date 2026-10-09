@@ -1,6 +1,6 @@
 import { Database } from 'sqlite3';
 import {
-    CreateCryptocurrencyInput,
+    CreateCryptocurrencyRecord,
     Cryptocurrency,
     UpdateCryptocurrencyInput,
 } from '../types/crypto';
@@ -22,7 +22,7 @@ function mapRow(row: CryptoRow): Cryptocurrency {
 }
 
 export interface CryptoRepository {
-    create(input: CreateCryptocurrencyInput): Promise<Cryptocurrency>;
+    create(input: CreateCryptocurrencyRecord): Promise<Cryptocurrency>;
     update(id: number, input: UpdateCryptocurrencyInput): Promise<Cryptocurrency | null>;
     delete(id: number): Promise<boolean>;
     findById(id: number): Promise<Cryptocurrency | null>;
@@ -36,7 +36,7 @@ export class CryptoRepositoryImpl implements CryptoRepository {
         this.db = db;
     }
 
-    async create(input: CreateCryptocurrencyInput): Promise<Cryptocurrency> {
+    async create(input: CreateCryptocurrencyRecord): Promise<Cryptocurrency> {
         return new Promise(async (resolve, reject) => {
             const { symbol, name } = input;
             const last_updated_at = new Date().toISOString();
@@ -126,6 +126,7 @@ export class CryptoRepositoryImpl implements CryptoRepository {
                 if (err) {
                     reject(err);
                 } else {
+                    //console.log(mapRow);
                     resolve(rows.map(mapRow));
                 }
             });
@@ -146,5 +147,3 @@ export class CryptoRepositoryImpl implements CryptoRepository {
         });
     }
 }
-
-// export const cryptoRepository = new CryptoRepositoryImpl(db);

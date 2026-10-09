@@ -1,9 +1,4 @@
 import { Database } from 'sqlite3';
-import {
-    CreateCryptocurrencyInput,
-    Cryptocurrency,
-    UpdateCryptocurrencyInput,
-} from '../types/crypto';
 import { CreatePriceHistoryInput, PriceHistory } from '../types/price';
 
 type PriceHistoryRow = {
@@ -24,6 +19,7 @@ function mapRow(row: PriceHistoryRow): PriceHistory {
 
 export interface PriceRepository {
     create(input: CreatePriceHistoryInput): Promise<PriceHistory>;
+    createSeveral(input: CreatePriceHistoryInput[]): Promise<PriceHistory[]>;
     findLatestByCryptoId(cryptoId: number): Promise<PriceHistory | null>;
     findHistoryByCryptoId(cryptocurrencyId: number): Promise<PriceHistory[]>;
 }
@@ -53,6 +49,95 @@ export class PriceRepositoryImpl implements PriceRepository {
                     };
                     resolve(newPriceHistory);
                 }
+            });
+        });
+    }
+
+    async createSeveral(inputs: CreatePriceHistoryInput[]): Promise<PriceHistory[]> {
+        const dbInstance = this.db;
+        return new Promise<PriceHistory[]>((resolve, reject) => {
+            dbInstance.serialize(() => {
+                dbInstance.run('BEGIN TRANSACTION', (beginError) => {
+                    if (beginError) return reject(beginError);
+
+                    const createdPrices: PriceHistory[] = [];
+                    let settled = false;
+
+                    const rollback = (error: Error) => {
+                        if (settled) return;
+                        settled = true;
+
+                        dbInstance.run('ROLLBACK', (rollbackError) => {
+                            if (rollbackError) {
+                                reject(
+                                    new AggregateError(
+                                        [error, rollbackError],
+                                        'Update and rollback failed',
+                                    ),
+                                );
+                            }
+                            reject(error);
+                        });
+                    };
+
+                    const commit = () => {
+                        dbInstance.run('COMMIT', (commitError) => {
+                            if (commitError) {
+                                rollback(commitError);
+                                return;
+                            }
+
+                            settled = true;
+                            resolve(createdPrices);
+                        });
+                    };
+
+                    let index = 0;
+                    const insertNext = () => {
+                        if (index >= inputs.length) {
+                            commit();
+                            return;
+                        }
+
+                        const { cryptocurrencyId, price, fetched_at } = inputs[index++]!;
+
+                        const queryPrice = `INSERT INTO price_history (cryptocurrency_id, price, fetched_at) VALUES (?, ?, ?)`;
+                        const queryUpdateTime = `UPDATE cryptocurrencies SET last_updated_at = ? WHERE id = ?`;
+
+                        dbInstance.run(
+                            queryPrice,
+                            [cryptocurrencyId, price, fetched_at],
+                            function (insertError) {
+                                if (insertError) {
+                                    rollback(insertError);
+                                    return;
+                                }
+
+                                const newPriceHistory: PriceHistory = {
+                                    id: this.lastID,
+                                    cryptocurrencyId,
+                                    price,
+                                    fetched_at,
+                                };
+
+                                dbInstance.run(
+                                    queryUpdateTime,
+                                    [fetched_at, cryptocurrencyId],
+                                    (updateError) => {
+                                        if (updateError) {
+                                            rollback(updateError);
+                                            return;
+                                        }
+                                        createdPrices.push(newPriceHistory);
+                                        insertNext();
+                                    },
+                                );
+                            },
+                        );
+                    };
+
+                    insertNext();
+                });
             });
         });
     }

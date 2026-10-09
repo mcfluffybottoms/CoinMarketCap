@@ -126,7 +126,7 @@ describe('CryptoRepository', () => {
         test('should return all cryptocurrencies with the specified symbol', async () => {
             const valuesToAdd = [
                 { symbol: 'BTC', name: 'Bitcoin' },
-                { symbol: 'BTC', name: 'Bitcoin 1' },
+                { symbol: 'BTC', name: 'Boost Trump Campaign' },
                 { symbol: 'LTC', name: 'Litecoin' },
             ];
             for (const value of valuesToAdd) {
