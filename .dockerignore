@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+dist
+coverage
+data
+.env
+.env.*
+!.env.example
+README.MD
+npm-debug.log*
+.DS_Store
