@@ -15,11 +15,6 @@ export const options = (url: string): swaggerJsdoc.Options => ({
         ],
         components: {
             securitySchemes: {
-                CMCApiKeyAuth: {
-                    type: 'apiKey',
-                    in: 'header',
-                    name: 'X-CMC_PRO_API_KEY',
-                },
                 BearerAuth: {
                     type: 'http',
                     scheme: 'bearer',

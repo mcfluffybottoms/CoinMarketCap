@@ -11,7 +11,11 @@ export class PriceSyncJob {
         private readonly priceService: PriceService,
         private readonly cryptoService: CryptoService,
         private readonly intervalMs: number,
-    ) {}
+    ) {
+        if (intervalMs <= 0) {
+            throw new SyncError('Sync interval must be a positive number');
+        }
+    }
 
     private async runOnce(): Promise<void> {
         if (this.isRunning) return;
@@ -19,7 +23,7 @@ export class PriceSyncJob {
         this.isRunning = true;
         try {
             const cryptocurrencies = await this.cryptoService.findAll();
-            this.priceService.refreshPrices(cryptocurrencies);
+            await this.priceService.refreshPrices(cryptocurrencies.map((coin) => coin.id));
         } catch (error) {
             logger.error(
                 `Price sync job failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -29,13 +33,13 @@ export class PriceSyncJob {
         }
     }
 
-    start() {
+    async start() {
         if (this.timer) return;
 
-        this.runOnce();
+        void this.runOnce();
 
         this.timer = setInterval(() => {
-            this.runOnce();
+            void this.runOnce();
         }, this.intervalMs);
     }
 

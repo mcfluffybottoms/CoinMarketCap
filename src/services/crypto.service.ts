@@ -6,12 +6,13 @@ import {
 import { CryptoRepository } from '../repositories/crypto.repository';
 import { CryptoClient } from '../clients/client';
 import { MappingIdToApiRepository } from '../repositories/id-mapping.repository';
+import { PriceService } from './price.service';
 
 export class CryptoService {
     constructor(
         private readonly repository: CryptoRepository,
         private readonly client: CryptoClient,
-        private readonly MappingIdToApiRepository: MappingIdToApiRepository,
+        private readonly mappingIdToApiRepository: MappingIdToApiRepository,
     ) {}
 
     async create(input: CreateCryptocurrencyRequest): Promise<Cryptocurrency[]> {
@@ -20,14 +21,14 @@ export class CryptoService {
         const addedCoins = (
             await Promise.all(
                 coins.map(async (coin) => {
-                    if (await this.MappingIdToApiRepository.existsByApiId(coin.apiId)) {
+                    if (await this.mappingIdToApiRepository.existsByApiId(coin.apiId)) {
                         return null;
                     }
                     const addedCoin = await this.repository.create({
                         name: coin.record.name,
                         symbol: coin.record.symbol,
                     });
-                    await this.MappingIdToApiRepository.save(addedCoin.id, coin.apiId);
+                    await this.mappingIdToApiRepository.save(addedCoin.id, coin.apiId);
                     return addedCoin;
                 }),
             )

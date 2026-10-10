@@ -23,8 +23,9 @@ export class MockCryptoClient implements CryptoClient {
 
     async getPrice(apiId: number): Promise<number> {
         const coin = this.data[apiId];
+
         if (coin == undefined) {
-            throw new ClientError('No id like this present.');
+            throw new ClientError('No id like this present.', 400);
         }
 
         const price = coin.basePrice;
@@ -33,12 +34,20 @@ export class MockCryptoClient implements CryptoClient {
         return Number((price * variation).toFixed(8));
     }
 
-    async getPrices(coins: { id: number }[]): Promise<CoinPrice[]> {
+    async getPrices(coins: number[]): Promise<CoinPrice[]> {
         const prices = [];
-        for (const coin of coins) {
+        for (const apiId of coins) {
+            const coin = this.data[apiId];
+            let price: number | undefined = 0;
+            if (coin) {
+                const variation = 1 + (Math.random() * 0.04 - 0.02);
+                price = Number((coin.basePrice * variation).toFixed(8));
+            } else {
+                price = undefined;
+            }
             prices.push({
-                id: coin.id,
-                price: await this.getPrice(coin.id),
+                id: apiId,
+                price: price,
             });
         }
         return prices;

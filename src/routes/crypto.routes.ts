@@ -58,10 +58,25 @@ export function createCryptoRoutes(controller: CryptoController) {
      * /api/cryptocurrencies:
      *   get:
      *     tags: [Cryptocurrency]
-     *     summary: Find a cryptocurrency
+     *     summary: Find cryptocurrencies by ID or symbol
+     *     parameters:
+     *       - in: query
+     *         name: id
+     *         required: false
+     *         schema:
+     *           type: integer
+     *         description: Local cryptocurrency ID
+     *       - in: query
+     *         name: symbol
+     *         required: false
+     *         schema:
+     *           type: string
+     *         description: Cryptocurrency symbol, such as BTC
      *     responses:
      *       200:
-     *         description: Cryptocurrency found
+     *         description: Cryptocurrencies found
+     *       400:
+     *         description: Invalid search parameters
      *       404:
      *         description: Cryptocurrency not found
      */
@@ -69,7 +84,7 @@ export function createCryptoRoutes(controller: CryptoController) {
 
     /**
      * @swagger
-     * /api/cryptocurrencies/{id}:
+     * /api/cryptocurrencies/{id} :
      *   put:
      *     tags: [Cryptocurrency]
      *     summary: Update a cryptocurrency

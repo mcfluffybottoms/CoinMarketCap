@@ -6,12 +6,13 @@ import { config } from './config/env';
 import { closeDatabase, getDatabase, runMigrations } from './db/database';
 import { logger } from './utils/logger';
 import { ShutdownManager } from './shutdown-manager';
+import { CoinMarketCapClient } from './clients/coinmarketcap.client';
 
 const PORT = config.port;
 
 export async function createServer(
     configOverride: Partial<typeof config> = {},
-    client: CryptoClient = new MockCryptoClient(),
+    client: CryptoClient,
 ) {
     const databaseConfig = {
         ...config,
@@ -31,14 +32,24 @@ export async function createServer(
 }
 
 export async function startServer(configOverride: Partial<typeof config> = {}) {
-    const { app, db, port, sync } = await createServer(configOverride);
+    const databaseConfig = {
+        ...config,
+        ...configOverride,
+    };
+
+    const client = new CoinMarketCapClient(
+        databaseConfig.CMCapiKey,
+        databaseConfig.currency,
+        databaseConfig.cmcTimeout,
+    );
+    const { app, db, port, sync } = await createServer(configOverride, client);
     let server: Server;
     let shutdown: ShutdownManager;
     try {
         server = app.listen(port, () => {
             logger.info(`Server is running on port ${PORT}`);
         });
-        sync.start();
+        await sync.start();
         shutdown = new ShutdownManager(server, db, sync);
     } catch (error) {
         console.error('Error starting the server:', error);

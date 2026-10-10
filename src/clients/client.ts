@@ -3,6 +3,6 @@ import { CreateCryptocurrencyRequest } from '../types/crypto';
 
 export interface CryptoClient {
     getPrice(id: number): Promise<number>;
-    getPrices(ids: { id: number }[]): Promise<CoinPrice[]>;
+    getPrices(ids: number[]): Promise<CoinPrice[]>;
     getCoinInfo(symbol: CreateCryptocurrencyRequest): Promise<CoinInfo[]>;
 }

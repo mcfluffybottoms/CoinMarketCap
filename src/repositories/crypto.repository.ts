@@ -84,18 +84,81 @@ export class CryptoRepositoryImpl implements CryptoRepository {
         });
     }
 
-    async delete(id: number): Promise<boolean> {
-        return new Promise(async (resolve, reject) => {
+    async delete(cryptoId: number): Promise<boolean> {
+        return new Promise((resolve, reject) => {
             const dbInstance = this.db;
-            const query = `DELETE FROM cryptocurrencies WHERE id = ?`;
-            dbInstance.run(query, [id], function (err) {
-                if (err) {
-                    reject(err);
-                } else if (this.changes === 0) {
-                    resolve(false);
-                } else {
-                    resolve(true);
-                }
+            dbInstance.serialize(() => {
+                dbInstance.run('BEGIN TRANSACTION', (beginError) => {
+                    if (beginError) {
+                        reject(beginError);
+                        return;
+                    }
+
+                    let settled = false;
+
+                    const rollback = (error: Error) => {
+                        if (settled) return;
+                        settled = true;
+
+                        dbInstance.run('ROLLBACK', (rollbackError) => {
+                            if (rollbackError) {
+                                reject(
+                                    new AggregateError(
+                                        [error, rollbackError],
+                                        'Delete and rollback failed',
+                                    ),
+                                );
+                            }
+                            reject(error);
+                        });
+                    };
+
+                    dbInstance.run(
+                        'DELETE FROM price_history WHERE cryptocurrency_id = ?',
+                        [cryptoId],
+                        (historyError) => {
+                            if (historyError) {
+                                return rollback(historyError);
+                            }
+
+                            dbInstance.run(
+                                'DELETE FROM mapping_table WHERE crypto_id = ?',
+                                [cryptoId],
+                                (mappingError) => {
+                                    if (mappingError) {
+                                        return rollback(mappingError);
+                                    }
+
+                                    dbInstance.run(
+                                        'DELETE FROM cryptocurrencies WHERE id = ?',
+                                        [cryptoId],
+                                        function (
+                                            this: import('sqlite3').RunResult,
+                                            deleteError: Error | null,
+                                        ) {
+                                            if (deleteError) {
+                                                rollback(deleteError);
+                                                return;
+                                            }
+                                            const deleted = this.changes > 0;
+
+                                            dbInstance.run('COMMIT', (commitError) => {
+                                                if (commitError) {
+                                                    rollback(commitError);
+                                                    return;
+                                                }
+
+                                                if (settled) return;
+                                                settled = true;
+                                                resolve(deleted);
+                                            });
+                                        },
+                                    );
+                                },
+                            );
+                        },
+                    );
+                });
             });
         });
     }
@@ -126,7 +189,6 @@ export class CryptoRepositoryImpl implements CryptoRepository {
                 if (err) {
                     reject(err);
                 } else {
-                    //console.log(mapRow);
                     resolve(rows.map(mapRow));
                 }
             });

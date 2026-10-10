@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PriceService } from '../services/price.service';
-import { ValidationError } from '../errors/errors';
+import { ClientError, ValidationError } from '../errors/errors';
 import { validateId } from '../validators/crypto.validator';
 
 export class PriceController {
@@ -10,13 +10,18 @@ export class PriceController {
         try {
             const cryptoId = validateId(req.params.id);
             const price = await this.service.refreshPrice(cryptoId);
+            if (!price) {
+                res.status(404).json({ error: 'Coin not found' });
+            }
             res.status(201).json(price);
         } catch (error: unknown) {
             if (error instanceof ValidationError) {
                 res.status(400).json({ error: error.message });
                 return;
             }
-
+            if (error instanceof ClientError) {
+                res.status(error.code).json({ error: error.message });
+            }
             throw error;
         }
     };

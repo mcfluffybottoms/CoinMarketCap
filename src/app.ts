@@ -19,11 +19,7 @@ import { options } from './swagger';
 import { PriceSyncJob } from './jobs/price-sync.job';
 import { MappingIdToApiRepository } from './repositories/id-mapping.repository';
 
-export async function createApp(
-    db: Database,
-    conf: typeof config,
-    client: CryptoClient = new MockCryptoClient(),
-) {
+export async function createApp(db: Database, conf: typeof config, client: CryptoClient) {
     const app = express();
 
     app.use(express.json());
@@ -37,7 +33,7 @@ export async function createApp(
     const priceRepository = new PriceRepositoryImpl(db);
 
     const cryptoService = new CryptoService(cryptoRepository, client, mappingIdToApiRepository);
-    const priceService = new PriceService(priceRepository, client);
+    const priceService = new PriceService(priceRepository, client, mappingIdToApiRepository);
 
     const cryptoController = new CryptoController(cryptoService);
     const priceController = new PriceController(priceService);
@@ -49,13 +45,16 @@ export async function createApp(
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     const authHandler = createAuthMiddleware(conf.apiKey);
-    app.use(authHandler);
-    app.use('/api/cryptocurrencies', cryptoRoutes);
-    app.use('/api/cryptocurrencies', priceRoutes);
 
+    app.use('/api/cryptocurrencies', authHandler, cryptoRoutes);
+    app.use('/api/cryptocurrencies', authHandler, priceRoutes);
     app.use(errorHandler);
-
-    const sync = new PriceSyncJob(priceService, cryptoService, 5000);
-
+    app.use((req, res) => {
+        res.status(404).json({
+            error: 'Route not found',
+            path: req.originalUrl,
+        });
+    });
+    const sync = new PriceSyncJob(priceService, cryptoService, config.updateTime);
     return { app, sync };
 }

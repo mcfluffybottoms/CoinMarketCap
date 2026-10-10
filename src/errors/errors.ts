@@ -6,7 +6,10 @@ export class ValidationError extends Error {
 }
 
 export class ClientError extends Error {
-    constructor(message: string) {
+    constructor(
+        message: string,
+        public readonly code: number,
+    ) {
         super(message);
         this.name = 'ClientError';
     }

@@ -2,7 +2,7 @@ import { CreateCryptocurrencyRecord } from './crypto';
 
 export type CoinPrice = {
     id: number;
-    price: number;
+    price: number | undefined;
 };
 
 export type CoinInfo = {

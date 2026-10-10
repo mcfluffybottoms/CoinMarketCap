@@ -1,17 +1,22 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-
 import { ClearDatabase, closeDatabase, getDatabase, runMigrations } from '../src/db/database';
 import { CryptoRepository, CryptoRepositoryImpl } from '../src/repositories/crypto.repository';
 import { testConfig } from './setup';
 import { Database } from 'sqlite3';
+import { PriceRepository, PriceRepositoryImpl } from '../src/repositories/price.repository';
+import { MappingIdToApiRepository } from '../src/repositories/id-mapping.repository';
 
 describe('CryptoRepository', () => {
     let testDb: Database;
     let testCryptoRepository: CryptoRepository;
+    let testPriceRepository: PriceRepository;
+    let testMapping: MappingIdToApiRepository;
     beforeAll(async () => {
         testDb = await getDatabase(testConfig.databasePath);
-        testCryptoRepository = new CryptoRepositoryImpl(testDb);
         await runMigrations(testDb, testConfig.migrationsPath);
+        testCryptoRepository = new CryptoRepositoryImpl(testDb);
+        testPriceRepository = new PriceRepositoryImpl(testDb);
+        testMapping = new MappingIdToApiRepository(testDb);
     });
 
     beforeEach(async () => {
@@ -96,6 +101,40 @@ describe('CryptoRepository', () => {
         test('delete a non existing coin returns null', async () => {
             const result = await testCryptoRepository.delete(999999);
             expect(result).toBe(false);
+        });
+        test('should delete an existing cryptocurrency and its price history', async () => {
+            const input = {
+                symbol: 'BTC',
+                name: 'Bitcoin',
+            };
+
+            const added = await testCryptoRepository.create(input);
+
+            await testPriceRepository.create({
+                cryptocurrencyId: added.id,
+                price: 65000,
+                fetched_at: new Date().toISOString(),
+            });
+
+            await testPriceRepository.create({
+                cryptocurrencyId: added.id,
+                price: 66000,
+                fetched_at: new Date().toISOString(),
+            });
+
+            const found = await testCryptoRepository.findById(added.id);
+            expect(found).not.toBeNull();
+            const historyBefore = await testPriceRepository.findHistoryByCryptoId(added.id);
+            expect(historyBefore).toHaveLength(2);
+
+            const isDeleted = await testCryptoRepository.delete(added.id);
+
+            const deleted = await testCryptoRepository.findById(added.id);
+            expect(deleted).toBeNull();
+            expect(isDeleted).toBe(true);
+
+            const historyAfter = await testPriceRepository.findHistoryByCryptoId(added.id);
+            expect(historyAfter).toHaveLength(0);
         });
     });
 

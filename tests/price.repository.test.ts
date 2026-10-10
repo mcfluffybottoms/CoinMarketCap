@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-
 import { ClearDatabase, closeDatabase, getDatabase, runMigrations } from '../src/db/database';
 import { PriceRepository, PriceRepositoryImpl } from '../src/repositories/price.repository';
 import { testConfig } from './setup';
@@ -12,9 +11,9 @@ describe('PriceRepository', () => {
     let testCryptoRepository: CryptoRepository;
     beforeAll(async () => {
         testDb = await getDatabase(testConfig.databasePath);
+        await runMigrations(testDb, testConfig.migrationsPath);
         testPriceRepository = new PriceRepositoryImpl(testDb);
         testCryptoRepository = new CryptoRepositoryImpl(testDb);
-        runMigrations(testDb, testConfig.migrationsPath);
     });
 
     beforeEach(async () => {

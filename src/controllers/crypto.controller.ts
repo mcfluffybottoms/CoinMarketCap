@@ -1,4 +1,4 @@
-import { ValidationError } from '../errors/errors';
+import { ClientError, ValidationError } from '../errors/errors';
 import { CryptoService } from '../services/crypto.service';
 import {
     CreateCryptocurrencyRequest,
@@ -31,6 +31,9 @@ export class CryptoController {
             if (error instanceof ValidationError) {
                 res.status(400).json({ error: error.message });
                 return;
+            }
+            if (error instanceof ClientError) {
+                res.status(error.code).json({ error: error.message });
             }
             throw error;
         }
