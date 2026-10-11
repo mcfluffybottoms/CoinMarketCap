@@ -4,6 +4,6 @@ data/*.db
 node_modules/
 
 literature/
-
+secrets/
 *.ts.map
 dist/

@@ -28,13 +28,6 @@ COPY --from=build /app/src/db/migrations ./src/db/migrations
 RUN mkdir -p /app/data \
     && chown -R node:node /app/data
 
-# ENV VARS
-ENV DATABASE_PATH=/app/data/crypto.db
-ENV MIGRATIONS_PATH=/app/src/db/migrations
-ENV MIGRATIONS_PATH=/app/src/db/migrations
-ENV CMC_API_KEY=""
-ENV APP_API_KEY=""
-
 USER node
 
 EXPOSE 3000

@@ -10,3 +10,4 @@ data
 README.MD
 npm-debug.log*
 .DS_Store
+secrets/
