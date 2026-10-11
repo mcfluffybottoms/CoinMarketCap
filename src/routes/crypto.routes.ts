@@ -16,7 +16,7 @@ export function createCryptoRoutes(controller: CryptoController) {
      * /api/cryptocurrencies:
      *   post:
      *     tags: [Cryptocurrency]
-     *     summary: Create a cryptocurrency
+     *     summary: Create a cryptocurrency (name is optional)
      *     requestBody:
      *       required: true
      *       content:
@@ -84,25 +84,46 @@ export function createCryptoRoutes(controller: CryptoController) {
 
     /**
      * @swagger
-     * /api/cryptocurrencies/{id} :
+     * /api/cryptocurrencies/{id}:
      *   put:
-     *     tags: [Cryptocurrency]
-     *     summary: Update a cryptocurrency
+     *     tags:
+     *       - Cryptocurrency
+     *     summary: Update a cryptocurrency symbol or name. The connection to the outside coin stays the same.
      *     parameters:
      *       - in: path
      *         name: id
      *         required: true
+     *         description: Local cryptocurrency ID
      *         schema:
-     *           type: string
-     *         description: Cryptocurrency ID
+     *           type: integer
+     *           minimum: 1
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - symbol
+     *               - name
+     *             properties:
+     *               symbol:
+     *                 type: string
+     *                 example: BTC
+     *               name:
+     *                 type: string
+     *                 example: Bitcoin
      *     responses:
      *       200:
      *         description: Cryptocurrency updated
      *       400:
-     *         description: Invalid ID
+     *         description: Invalid ID or request body
+     *       401:
+     *         description: Unauthorized
      *       404:
      *         description: Cryptocurrency not found
      */
+    router.put('/:id', controller.update);
     router.put('/:id', controller.update);
 
     /**
