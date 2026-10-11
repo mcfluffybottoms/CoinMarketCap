@@ -15,7 +15,7 @@ services:
             CMC_API_KEY_FILE: /run/secrets/cmc_api_key
             APP_API_KEY_FILE: /run/secrets/app_api_key
         ports:
-            - "3000:3000"
+            - '3000:3000'
         volumes:
             - crypto_data:/app/data
 
