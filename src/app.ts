@@ -38,11 +38,11 @@ export async function createApp(db: Database, conf: typeof config, client: Crypt
     const cryptoRoutes = createCryptoRoutes(cryptoController);
     const priceRoutes = createPriceRoutes(priceController);
 
-    if (config.environment === 'development') {
+    if (conf.environment === 'development') {
         const swaggerJsdoc = (await import('swagger-jsdoc')).default;
         const swaggerUi = (await import('swagger-ui-express')).default;
 
-        const swaggerSpec = swaggerJsdoc(options('http://localhost:3000'));
+        const swaggerSpec = swaggerJsdoc(options(`http://localhost:${conf.port}`));
 
         app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     }
@@ -58,6 +58,6 @@ export async function createApp(db: Database, conf: typeof config, client: Crypt
             path: req.originalUrl,
         });
     });
-    const sync = new PriceSyncJob(priceService, cryptoService, config.updateTime);
+    const sync = new PriceSyncJob(priceService, cryptoService, conf.updateTime);
     return { app, sync };
 }
