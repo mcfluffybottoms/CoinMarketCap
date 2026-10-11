@@ -23,6 +23,7 @@ export class PriceSyncJob {
         this.isRunning = true;
         try {
             const cryptocurrencies = await this.cryptoService.findAll();
+            logger.info('Refreshing prices...');
             await this.priceService.refreshPrices(cryptocurrencies.map((coin) => coin.id));
         } catch (error) {
             logger.error(

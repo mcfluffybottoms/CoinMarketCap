@@ -9,12 +9,9 @@ import { errorHandler } from './middleware/error.middleware';
 import { config } from './config/env';
 import { createAuthMiddleware } from './middleware/auth.middleware';
 import { CryptoClient } from './clients/client';
-import { MockCryptoClient } from './clients/mock-crypto.client';
 import { PriceController } from './controllers/price.controller';
 import { createPriceRoutes } from './routes/price.routes';
 import { PriceService } from './services/price.service';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
 import { options } from './swagger';
 import { PriceSyncJob } from './jobs/price-sync.job';
 import { MappingIdToApiRepository } from './repositories/id-mapping.repository';
@@ -41,8 +38,14 @@ export async function createApp(db: Database, conf: typeof config, client: Crypt
     const cryptoRoutes = createCryptoRoutes(cryptoController);
     const priceRoutes = createPriceRoutes(priceController);
 
-    const swaggerSpec = swaggerJsdoc(options('http://localhost:3000'));
-    app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    if (config.environment === 'development') {
+        const swaggerJsdoc = (await import('swagger-jsdoc')).default;
+        const swaggerUi = (await import('swagger-ui-express')).default;
+
+        const swaggerSpec = swaggerJsdoc(options('http://localhost:3000'));
+
+        app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    }
 
     const authHandler = createAuthMiddleware(conf.apiKey);
 

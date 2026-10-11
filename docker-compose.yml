@@ -1,0 +1,28 @@
+services:
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: coinmarketcap-api
+        restart: unless-stopped
+        env_file:
+            - .env
+        environment:
+            PORT: 3000
+            DATABASE_PATH: /app/data/crypto.db
+            MIGRATIONS_PATH: /app/src/db/migrations
+            ENVIRONMENT: production
+            CMC_API_KEY_FILE: /run/secrets/cmc_api_key
+            APP_API_KEY_FILE: /run/secrets/app_api_key
+        ports:
+            - '3000:3000'
+        volumes:
+            - crypto_data:/app/data
+
+volumes:
+    crypto_data:
+secrets:
+    cmc_api_key:
+        file: ./secrets/cmc_api_key
+    app_api_key:
+        file: ./secrets/app_api_key
